@@ -21,6 +21,16 @@ router.use(async (req, res, next) => {
   if (!token) return next();
 
   // TODO: Find customer with ID decrypted from the token and attach to the request
+  try {
+    const { id } = jwt.verify(token, JWT_SECRET);
+    const customer = await prisma.customer.findUniqueOrThrow({
+      where: { id },
+    });
+    req.customer = customer;
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // TODO: POST /register
