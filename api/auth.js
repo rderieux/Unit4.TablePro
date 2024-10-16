@@ -2,8 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 // TODO: Import jwt and JWT_SECRET
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // TODO: createToken
+function createToken(id) {
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: "1d" });
+}
 
 const prisma = require("../prisma");
 
@@ -19,8 +24,28 @@ router.use(async (req, res, next) => {
 });
 
 // TODO: POST /register
+router.post("/register", async (req, res, next) => {
+  const { email, password } = req.body;
+  try {
+    const customer = await prisma.customer.register(email, password);
+    const token = createToken(customer.id);
+    res.status(201).json({ token });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // TODO: POST /login
+router.post("/login", async (req, res, next) => {
+  const { email, password } = req.body;
+  try {
+    const customer = await prisma.customer.login(email, password);
+    const token = createToken(customer.id);
+    res.json({ token });
+  } catch (e) {
+    next(e);
+  }
+});
 
 /** Checks the request for an authenticated customer. */
 function authenticate(req, res, next) {
