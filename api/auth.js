@@ -6,7 +6,16 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // TODO: createToken
+// Define function that takes one parameter id
 function createToken(id) {
+  /*
+  return jwt.sign method from jsonwebtoken library
+  creates a new JWT
+  Parameters of jwt.sign:
+  payload {id}: the data we want to encode in the token
+  JWT_SECRET: secret code to sign the token
+  Options { expiresIn: "1d" }: optional setting for setting exp for 1 day
+  */
   return jwt.sign({ id }, JWT_SECRET, { expiresIn: "1d" });
 }
 
@@ -17,16 +26,22 @@ const prisma = require("../prisma");
 router.use(async (req, res, next) => {
   // Grab token from headers only if it exists
   const authHeader = req.headers.authorization;
+  // Slice off the first 7 characters (Bearer ), leaving the token
   const token = authHeader?.slice(7); // "Bearer <token>"
+  // If there is no token move on to the next middleware
   if (!token) return next();
 
   // TODO: Find customer with ID decrypted from the token and attach to the request
   try {
+    // Decodes the id from the token, using the secret code in env
+    // Assigns the id to variable id
     const { id } = jwt.verify(token, JWT_SECRET);
     const customer = await prisma.customer.findUniqueOrThrow({
       where: { id },
     });
+    // Attach the found customer to the request object
     req.customer = customer;
+    // Move to the next middleware
     next();
   } catch (error) {
     next(error);
